@@ -5,7 +5,7 @@ import React, {
   Text,
   View
 } from 'react-native';
-import Snackbar from '../react-native-snackbar';
+import Snackbar from '../index';
 
 class Example extends Component {
   render() {

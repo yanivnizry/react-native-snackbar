@@ -1,3 +1,3 @@
-rootProject.name = 'examples'
+rootProject.name = 'example'
 
 include ':app', ':react-native-snackbar'

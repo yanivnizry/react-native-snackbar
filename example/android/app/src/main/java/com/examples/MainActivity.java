@@ -19,6 +19,11 @@ public class MainActivity extends ReactActivity {
         return "examples";
     }
 
+    @Override
+    protected String getJSMainModuleName() {
+        return "index";
+    }
+
     /**
      * Returns whether dev mode should be enabled.
      * This enables e.g. the dev menu.
