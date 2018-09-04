@@ -6,9 +6,12 @@ import android.support.design.widget.Snackbar;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.content.Context;
+import android.support.v4.view.ViewCompat;
 
 import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.ReactApplicationContext;
+import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableMap;
@@ -20,147 +23,147 @@ import java.util.Map;
 
 public class SnackbarModule extends ReactContextBaseJavaModule{
 
-	final Context context = this;
+	private static final String REACT_NAME = "RNSnackbar";
 
-    private static final String REACT_NAME = "RNSnackbar";
+	private List<Snackbar> mActiveSnackbars = new ArrayList<>();
 
-    private List<Snackbar> mActiveSnackbars = new ArrayList<>();
+	public SnackbarModule(ReactApplicationContext reactContext) {
+		super(reactContext);
+	}
 
-    public SnackbarModule(ReactApplicationContext reactContext) {
-        super(reactContext);
-    }
+	public static void configSnackbar(Context context, Snackbar snack) {
+		addMargins(snack);
+		setRoundBordersBg(context, snack);
+		ViewCompat.setElevation(snack.getView(), 6f);
+	}
 
-    public static void configSnackbar(Context context, Snackbar snack) {
-        addMargins(snack);
-        setRoundBordersBg(context, snack);
-        ViewCompat.setElevation(snack.getView(), 6f);
-    }
+	private static void addMargins(Snackbar snack) {
+		ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) snack.getView().getLayoutParams();
+		params.setMargins(24, 24, 24, 24);
+		snack.getView().setLayoutParams(params);
+	}
 
-    private static void addMargins(Snackbar snack) {
-        ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) snack.getView().getLayoutParams();
-        params.setMargins(12, 12, 12, 12);
-        snack.getView().setLayoutParams(params);
-    }
+	private static void setRoundBordersBg(Context context, Snackbar snackbar) {
+		snackbar.getView().setBackground(context.getDrawable(R.drawable.bg_snackbar));
+	}
 
-    private static void setRoundBordersBg(Context context, Snackbar snackbar) {
-        snackbar.getView().setBackground(context.getDrawable(R.drawable.bg_snackbar));
-    }
+	@Override
+	public String getName() {
+		return REACT_NAME;
+	}
 
-    @Override
-    public String getName() {
-        return REACT_NAME;
-    }
+	@Override
+	public Map<String, Object> getConstants() {
+		final Map<String, Object> constants = new HashMap<>();
 
-    @Override
-    public Map<String, Object> getConstants() {
-        final Map<String, Object> constants = new HashMap<>();
+		constants.put("LENGTH_LONG", Snackbar.LENGTH_LONG);
+		constants.put("LENGTH_SHORT", Snackbar.LENGTH_SHORT);
+		constants.put("LENGTH_INDEFINITE", Snackbar.LENGTH_INDEFINITE);
 
-        constants.put("LENGTH_LONG", Snackbar.LENGTH_LONG);
-        constants.put("LENGTH_SHORT", Snackbar.LENGTH_SHORT);
-        constants.put("LENGTH_INDEFINITE", Snackbar.LENGTH_INDEFINITE);
+		return constants;
+	}
 
-        return constants;
-    }
+	@ReactMethod
+	public void show(ReadableMap options, final Callback callback) {
+		ViewGroup view;
 
-    @ReactMethod
-    public void show(ReadableMap options, final Callback callback) {
-        ViewGroup view;
+		try {
+			view = (ViewGroup) getCurrentActivity().getWindow().getDecorView().findViewById(android.R.id.content);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return;
+		}
 
-        try {
-            view = (ViewGroup) getCurrentActivity().getWindow().getDecorView().findViewById(android.R.id.content);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return;
-        }
+		if (view == null) return;
 
-        if (view == null) return;
+		mActiveSnackbars.clear();
 
-        mActiveSnackbars.clear();
-
-        if (!view.hasWindowFocus()) {
+		if (!view.hasWindowFocus()) {
             // The view is not focused, we should get all the modal views in the screen.
-            ArrayList<View> modals = recursiveLoopChildren(view, new ArrayList<View>());
+			ArrayList<View> modals = recursiveLoopChildren(view, new ArrayList<View>());
 
-            for (View modalViews : modals) {
-                displaySnackbar(modalViews, options, callback);
-            }
+			for (View modalViews : modals) {
+				displaySnackbar(modalViews, options, callback);
+			}
 
-            return;
-        }
+			return;
+		}
 
-        displaySnackbar(view, options, callback);
-    }
+		displaySnackbar(view, options, callback);
+	}
 
-    @ReactMethod
-    public void dismiss() {
-        for (Snackbar snackbar : mActiveSnackbars) {
-            if (snackbar != null) {
-                snackbar.dismiss();
-            }
-        }
+	@ReactMethod
+	public void dismiss() {
+		for (Snackbar snackbar : mActiveSnackbars) {
+			if (snackbar != null) {
+				snackbar.dismiss();
+			}
+		}
 
-        mActiveSnackbars.clear();
-    }
+		mActiveSnackbars.clear();
+	}
 
-    private void displaySnackbar(View view, ReadableMap options, final Callback callback) {
-        String title = options.hasKey("title") ? options.getString("title") : "";
-        int duration = options.hasKey("duration") ? options.getInt("duration") : Snackbar.LENGTH_SHORT;
+	private void displaySnackbar(View view, ReadableMap options, final Callback callback) {
+		String title = options.hasKey("title") ? options.getString("title") : "";
+		int duration = options.hasKey("duration") ? options.getInt("duration") : Snackbar.LENGTH_SHORT;
 
-        Snackbar snackbar = Snackbar.make(view, title, duration);
-        mActiveSnackbars.add(snackbar);
+		Snackbar snackbar = Snackbar.make(view, title, duration);
+		mActiveSnackbars.add(snackbar);
 
         // Set the background color.
-        if (options.hasKey("backgroundColor")) {
-            snackbar.getView().setBackgroundColor(options.getInt("backgroundColor"));
-        }
+		if (options.hasKey("backgroundColor")) {
+			snackbar.getView().setBackgroundColor(options.getInt("backgroundColor"));
+		}
 
-        if (options.hasKey("action")) {
-            View.OnClickListener onClickListener = new View.OnClickListener() {
+		if (options.hasKey("action")) {
+			View.OnClickListener onClickListener = new View.OnClickListener() {
                 // Prevent double-taps which can lead to a crash.
-                boolean callbackWasCalled = false;
-                
-                @Override
-                public void onClick(View v) {
-                    if (callbackWasCalled) return;
-                    callbackWasCalled = true;
+				boolean callbackWasCalled = false;
+				
+				@Override
+				public void onClick(View v) {
+					if (callbackWasCalled) return;
+					callbackWasCalled = true;
 
-                    callback.invoke();
-                }
-            };
+					callback.invoke();
+				}
+			};
 
-            ReadableMap actionDetails = options.getMap("action");
-            snackbar.setAction(actionDetails.getString("title"), onClickListener);
-            snackbar.setActionTextColor(actionDetails.getInt("color"));
-        }
+			ReadableMap actionDetails = options.getMap("action");
+			snackbar.setAction(actionDetails.getString("title"), onClickListener);
+			snackbar.setActionTextColor(actionDetails.getInt("color"));
+		}
 
         // For older devices, explicitly set the text color; otherwise it may appear dark gray.
         // http://stackoverflow.com/a/31084530/763231
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-            View snackbarView = snackbar.getView();
-            TextView snackbarText = (TextView) snackbarView.findViewById(android.support.design.R.id.snackbar_text);
-            snackbarText.setTextColor(Color.WHITE);
-        }
+		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+			View snackbarView = snackbar.getView();
+			TextView snackbarText = (TextView) snackbarView.findViewById(android.support.design.R.id.snackbar_text);
+			snackbarText.setTextColor(Color.WHITE);
+		}
 
-        snackbar.show();
-    }
+		configSnackbar(getReactApplicationContext(), snackbar);
+
+		snackbar.show();
+	}
 
     /**
      * Loop through all child modals and save references to them.
      */
     private ArrayList<View> recursiveLoopChildren(ViewGroup view, ArrayList<View> modals) {
-        if (view.getClass().getSimpleName().equalsIgnoreCase("ReactModalHostView")) {
-            modals.add(view.getChildAt(0));
-        }
+    	if (view.getClass().getSimpleName().equalsIgnoreCase("ReactModalHostView")) {
+    		modals.add(view.getChildAt(0));
+    	}
 
-        for (int i = view.getChildCount() - 1; i >= 0; i--) {
-            final View child = view.getChildAt(i);
+    	for (int i = view.getChildCount() - 1; i >= 0; i--) {
+    		final View child = view.getChildAt(i);
 
-            if (child instanceof ViewGroup) {
-                recursiveLoopChildren((ViewGroup) child, modals);
-            }
-        }
+    		if (child instanceof ViewGroup) {
+    			recursiveLoopChildren((ViewGroup) child, modals);
+    		}
+    	}
 
-        return modals;
+    	return modals;
     }
 
 }
