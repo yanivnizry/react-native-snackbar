@@ -20,6 +20,8 @@ import java.util.Map;
 
 public class SnackbarModule extends ReactContextBaseJavaModule{
 
+	final Context context = this;
+
     private static final String REACT_NAME = "RNSnackbar";
 
     private List<Snackbar> mActiveSnackbars = new ArrayList<>();
